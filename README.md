@@ -61,7 +61,17 @@ npm run dev                     # http://localhost:3000
 ```bash
 npm test          # unit tests (no API key needed)
 npm run build     # production build
+npm run eval      # measure extraction accuracy on labelled drawings (needs key)
 ```
+
+## Evaluation
+
+The extractor is **measured, not assumed.** `npm run eval` runs the LLM against
+hand-labelled real drawings (`eval/cases.json`) and scores field-level accuracy
+with tolerant matchers — per drawing and per field. Latest run on
+`gemini-3.5-flash`: **95.8% field accuracy (23/24) across 3 drawings.** Swap
+`AI_MODEL` and re-run to compare models — the whole point of keeping the provider
+behind a port.
 
 ## What it is / isn't
 

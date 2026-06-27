@@ -44,3 +44,6 @@ next-env.d.ts
 
 # local test drawings (not for the repo)
 /samples/
+
+# eval run artifact
+/eval/last-run.json

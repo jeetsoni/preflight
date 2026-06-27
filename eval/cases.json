@@ -1,0 +1,44 @@
+[
+  {
+    "file": "part-hlh.jpg",
+    "mediaType": "image/jpeg",
+    "label": "HLH bearing housing — material & title block intentionally blank on the drawing",
+    "expect": {
+      "process": "cnc_machining",
+      "units": "mm",
+      "materialNull": true,
+      "overallDimensionsMm": [214.5, 190, 162],
+      "surfaceFinishesContain": ["12.5", "3.2", "1.6"],
+      "titleBlockPartNumberNull": true,
+      "ambiguitiesEmpty": true
+    }
+  },
+  {
+    "file": "Sample_Part.pdf",
+    "mediaType": "application/pdf",
+    "label": "Jiga Logo Plaque (Jiga's own demo drawing)",
+    "expect": {
+      "process": "cnc_machining",
+      "units": "mm",
+      "materialContains": "C93200",
+      "overallDimensionsMm": [120, 120, 12],
+      "surfaceFinishesContain": ["1.6", "0.8"],
+      "finishingPresent": true,
+      "titleBlockPartNumberContains": "JIGA-PLQ-001",
+      "titleBlockRevision": "A",
+      "ambiguitiesEmpty": true
+    }
+  },
+  {
+    "file": "part-aluminum.png",
+    "mediaType": "image/png",
+    "label": "GENSUN base piece (7075-T6 aluminum)",
+    "expect": {
+      "process": "cnc_machining",
+      "units": "mm",
+      "materialContains": "7075",
+      "titleBlockTitleContains": "base",
+      "ambiguitiesEmpty": true
+    }
+  }
+]
