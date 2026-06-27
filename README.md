@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pre-Flight
 
-## Getting Started
+**Instant quote-readiness for engineering drawings.** Drop a 2D drawing (PDF/PNG) and get, in seconds — before you ever talk to a supplier:
 
-First, run the development server:
+1. **A quote-readiness score (0–100)** with a checklist of exactly what's missing or ambiguous.
+2. **The extracted requirements** (process, material, tolerances, finish, title block).
+3. **Conservative DFM risk flags** — clearly labelled heuristic, to confirm with a supplier.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Why this exists
+
+On managed sourcing platforms, the moment after you upload a part is the moment everything goes quiet: the AI extracts your specs, then you wait on a human for everything that follows. The single biggest cause of a *slow* quote is an **incomplete or ambiguous drawing** — a missing datum, no quantity, an unstated material — which forces a round-trip with the supplier.
+
+Pre-Flight closes that gap with instant, pre-quote intelligence. It doesn't replace a human-reviewed quote; it makes the RFQ **supplier-ready on second zero** so the quote comes back faster. Every readiness check reads a *fact* off the drawing (not an estimate), so the result holds up to a manufacturing reviewer.
+
+## Architecture (Clean Architecture + DI)
+
+Dependencies point inward only. The core knows nothing about Next.js, React, or any LLM.
+
+```
+ delivery (Next.js App Router, antd)        <- frameworks & drivers
+   |_ src/app, src/app/api/analyze
+ composition root (manual DI)               <- wiring
+   |_ src/composition/container.ts
+ infrastructure (adapters)                  <- implements the ports
+   |_ src/infrastructure/ai      (Vercel AI SDK: extractor, risk analyzer, provider registry)
+   |_ src/infrastructure/ingest  (upload normalization)
+ core/application (use case + ports)        <- orchestration, depends on interfaces
+   |_ AnalyzeDrawing, SpecExtractorPort, RiskAnalyzerPort, DrawingIngestPort
+ core/domain (entities + policy)            <- pure business rules, zero dependencies
+   |_ ExtractedSpec, ReadinessReport, ReadinessPolicy
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Pipeline: `ingest -> extract specs (LLM) -> assess DFM risk (LLM) -> score readiness (pure domain)`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Swappable LLM, by design
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The AI SDK lives only in the infrastructure layer, behind `SpecExtractorPort` / `RiskAnalyzerPort`. Switching model or provider is an **env change**, never a code change:
 
-## Learn More
+```bash
+AI_PROVIDER=google     AI_MODEL=gemini-2.5-flash    # default
+AI_PROVIDER=anthropic  AI_MODEL=claude-sonnet-4-6   # one line to switch
+```
 
-To learn more about Next.js, take a look at the following resources:
+Because the use case depends on interfaces, the business logic is unit-tested with fake adapters and **no network** (see `test/analyze-drawing.spec.ts`).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Next.js 16 · React 19 · TypeScript · [Vercel AI SDK](https://ai-sdk.dev) (`ai` + `@ai-sdk/google` / `@ai-sdk/anthropic`) · Zod (structured output) · Ant Design 6 · Vitest.
 
-## Deploy on Vercel
+## Run locally
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm install
+cp .env.example .env.local      # then paste your GOOGLE_GENERATIVE_AI_API_KEY
+npm run dev                     # http://localhost:3000
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm test          # unit tests (no API key needed)
+npm run build     # production build
+```
+
+## What it is / isn't
+
+- **Is:** instant, pre-quote *intelligence* — readiness, completeness, conservative DFM flags.
+- **Isn't:** a binding price quote or a replacement for a vetted supplier. Cost is deliberately not estimated; the value is in catching the gaps that slow a real quote.
+
+---
+
+Built by Jeet. Theme tokens mirror Jiga's app so the workflow feels native to their product.
