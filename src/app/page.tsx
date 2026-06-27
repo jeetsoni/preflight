@@ -77,7 +77,7 @@ export default function Home() {
                 style={{ marginTop: 16 }}
                 type="error"
                 showIcon
-                message="Couldn't analyze that file"
+                title="Couldn't analyze that file"
                 description={error}
               />
             )}

@@ -15,7 +15,7 @@ const registry = createProviderRegistry({ google, anthropic });
 export type ProviderId = 'google' | 'anthropic';
 
 const DEFAULT_MODEL: Record<ProviderId, string> = {
-  google: 'gemini-2.5-flash',
+  google: 'gemini-3.5-flash',
   anthropic: 'claude-sonnet-4-6',
 };
 

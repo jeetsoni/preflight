@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { Card, Progress, Tag, List, Alert, Typography, Flex, Space } from 'antd';
+import { Card, Progress, Tag, Alert, Typography, Flex, Space } from 'antd';
 import { CheckCircleFilled, WarningFilled, CloseCircleFilled } from '@ant-design/icons';
 import type { ExtractedSpec } from '@/core/domain/entities/extracted-spec';
 import type {
@@ -93,10 +93,15 @@ export function ReadinessReportView({
       </Card>
 
       <Card title="Readiness checklist" size="small">
-        <List
-          dataSource={[...report.checks]}
-          renderItem={(c) => (
-            <List.Item>
+        <Flex vertical>
+          {report.checks.map((c, i) => (
+            <div
+              key={c.id}
+              style={{
+                padding: '12px 0',
+                borderBottom: i < report.checks.length - 1 ? '1px solid #f0f0f0' : 'none',
+              }}
+            >
               <Flex gap={12} align="flex-start" style={{ width: '100%' }}>
                 <span style={{ fontSize: 18, lineHeight: '22px' }}>{STATUS_META[c.status].icon}</span>
                 <Flex vertical style={{ flex: 1 }}>
@@ -107,9 +112,9 @@ export function ReadinessReportView({
                 </Flex>
                 <Tag>{c.weight} pts</Tag>
               </Flex>
-            </List.Item>
-          )}
-        />
+            </div>
+          ))}
+        </Flex>
       </Card>
 
       <Card
@@ -130,7 +135,7 @@ export function ReadinessReportView({
                 key={`risk-${i}`}
                 type={SEVERITY_TYPE[r.severity]}
                 showIcon
-                message={
+                title={
                   <Text strong>
                     {r.title}
                     <Tag style={{ marginInlineStart: 6 }}>{r.severity}</Tag>

@@ -37,7 +37,7 @@ Pipeline: `ingest -> extract specs (LLM) -> assess DFM risk (LLM) -> score readi
 The AI SDK lives only in the infrastructure layer, behind `SpecExtractorPort` / `RiskAnalyzerPort`. Switching model or provider is an **env change**, never a code change:
 
 ```bash
-AI_PROVIDER=google     AI_MODEL=gemini-2.5-flash    # default
+AI_PROVIDER=google     AI_MODEL=gemini-3.5-flash    # default
 AI_PROVIDER=anthropic  AI_MODEL=claude-sonnet-4-6   # one line to switch
 ```
 
