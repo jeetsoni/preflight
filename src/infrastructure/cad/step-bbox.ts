@@ -1,11 +1,14 @@
 /**
  * Dependency-free STEP (ISO 10303-21) bounding-box reader.
  *
- * It does NOT need a CAD kernel: it scans every CARTESIAN_POINT in the file and
- * takes the min/max on each axis. For solid models this closely approximates the
- * overall geometric extent (vertices/control points), which is all we need to
- * cross-check the drawing's stated overall size against the model. It is reported
- * as `approximate` for honesty.
+ * It does NOT need a CAD kernel. It prefers the model's true VERTEX points
+ * (CARTESIAN_POINTs referenced by VERTEX_POINT) and takes their min/max per axis.
+ * Using vertices — rather than every CARTESIAN_POINT — is important: B-spline /
+ * NURBS *control* points (e.g. engraved logos, fillets) lie outside the real
+ * geometry and would otherwise inflate the box. If a file has no usable vertices
+ * we fall back to all points. The result is reported as `approximate`.
+ *
+ * Length units are normalized to mm (handles MILLIMETRE, METRE, and INCH).
  */
 
 export interface StepBoundingBox {
@@ -14,49 +17,63 @@ export interface StepBoundingBox {
   readonly unit: 'mm' | 'inch' | 'unknown';
   readonly pointCount: number;
   readonly approximate: true;
+  /** Whether the box came from true vertices or (fallback) all points. */
+  readonly source: 'vertices' | 'points';
 }
 
 const NUM = String.raw`-?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?`;
-const POINT_RE = new RegExp(
-  String.raw`CARTESIAN_POINT\s*\(\s*'[^']*'\s*,\s*\(\s*(${NUM})\s*,\s*(${NUM})\s*,\s*(${NUM})\s*\)`,
+const POINT_ID_RE = new RegExp(
+  String.raw`#(\d+)\s*=\s*CARTESIAN_POINT\s*\(\s*'[^']*'\s*,\s*\(\s*(${NUM})\s*,\s*(${NUM})\s*,\s*(${NUM})\s*\)`,
   'g',
 );
+const VERTEX_RE = /VERTEX_POINT\s*\(\s*'[^']*'\s*,\s*#(\d+)\s*\)/g;
+
+type Pt = [number, number, number];
 
 export function parseStepBoundingBox(content: string): StepBoundingBox | null {
-  const min = [Infinity, Infinity, Infinity];
-  const max = [-Infinity, -Infinity, -Infinity];
-  let count = 0;
+  const byId = new Map<string, Pt>();
+  for (const m of content.matchAll(POINT_ID_RE)) {
+    const p: Pt = [parseFloat(m[2]), parseFloat(m[3]), parseFloat(m[4])];
+    if (p.every((v) => Number.isFinite(v))) byId.set(m[1], p);
+  }
+  if (byId.size === 0) return null;
 
-  for (const m of content.matchAll(POINT_RE)) {
-    const p = [parseFloat(m[1]), parseFloat(m[2]), parseFloat(m[3])];
-    if (p.some((v) => !Number.isFinite(v))) continue;
+  const vertices: Pt[] = [];
+  for (const m of content.matchAll(VERTEX_RE)) {
+    const p = byId.get(m[1]);
+    if (p) vertices.push(p);
+  }
+
+  const usingVertices = vertices.length >= 2;
+  const pts = usingVertices ? vertices : [...byId.values()];
+
+  const min: Pt = [Infinity, Infinity, Infinity];
+  const max: Pt = [-Infinity, -Infinity, -Infinity];
+  for (const p of pts) {
     for (let i = 0; i < 3; i++) {
       if (p[i] < min[i]) min[i] = p[i];
       if (p[i] > max[i]) max[i] = p[i];
     }
-    count++;
   }
-
-  if (count === 0) return null;
 
   const unit = detectLengthUnit(content);
   const scale = unit === 'inch' ? 25.4 : unit === 'm' ? 1000 : 1;
-  const sides = [max[0] - min[0], max[1] - min[1], max[2] - min[2]]
+  const dimsMm = [max[0] - min[0], max[1] - min[1], max[2] - min[2]]
     .map((d) => round2(d * scale))
     .sort((a, b) => b - a);
 
   return {
-    dimsMm: sides,
+    dimsMm,
     unit: unit === 'inch' ? 'inch' : unit === 'unknown' ? 'unknown' : 'mm',
-    pointCount: count,
+    pointCount: pts.length,
     approximate: true,
+    source: usingVertices ? 'vertices' : 'points',
   };
 }
 
 function detectLengthUnit(c: string): 'mm' | 'inch' | 'm' | 'unknown' {
   if (/CONVERSION_BASED_UNIT\s*\(\s*'?\s*INCH/i.test(c)) return 'inch';
   if (/SI_UNIT\s*\(\s*\.MILLI\.\s*,\s*\.METRE\./i.test(c)) return 'mm';
-  if (/SI_UNIT\s*\(\s*\.CENTI\.\s*,\s*\.METRE\./i.test(c)) return 'm'; // 10x; rare, treat via metre-ish fallback
   if (/SI_UNIT\s*\(\s*\$\s*,\s*\.METRE\./i.test(c)) return 'm';
   return 'unknown';
 }
