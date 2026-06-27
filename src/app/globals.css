@@ -559,14 +559,49 @@ body {
   margin: 0;
 }
 
-@media (max-width: 560px) {
+@media (max-width: 640px) {
+  .pf-main {
+    padding: 24px 14px 72px;
+  }
+  .pf-header-inner {
+    padding: 0 14px;
+  }
+  .pf-byline {
+    display: none;
+  }
+  .pf-h1 {
+    font-size: 25px;
+  }
+  .pf-sub {
+    font-size: 15px;
+  }
+  .pf-card {
+    padding: 18px 16px;
+  }
+  .pf-card-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+  }
   .pf-hero {
+    flex-direction: column;
+    align-items: flex-start;
     gap: 18px;
+  }
+  .pf-hero-body {
+    min-width: 0;
+  }
+  .pf-report-title {
+    font-size: 20px;
+  }
+  .pf-chip {
+    white-space: normal;
   }
   .pf-dims {
     flex-direction: column;
   }
   .pf-dim-sep {
     transform: rotate(90deg);
+    padding: 2px 0;
   }
 }
