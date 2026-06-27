@@ -1,14 +1,13 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Upload, Button, Typography, Card, Spin, Alert, Flex } from 'antd';
+import { Upload, Button } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import type { ReadinessReport } from '@/core/domain/entities/readiness';
 import { AppHeader } from './components/app-header';
 import { ReadinessReportView } from './components/readiness-report-view';
 
 const { Dragger } = Upload;
-const { Title, Paragraph, Text } = Typography;
 
 const DRAWING_RE = /\.(pdf|png|jpe?g|webp)$/i;
 const CAD_RE = /\.(step|stp)$/i;
@@ -43,7 +42,7 @@ export default function Home() {
     setLoading(true);
     setError(null);
     setReport(null);
-    setFileName(cad ? `${drawing.name} + ${cad.name}` : drawing.name);
+    setFileName(cad ? `${drawing.name}  +  ${cad.name}` : drawing.name);
     try {
       const fd = new FormData();
       fd.append('file', drawing);
@@ -68,19 +67,17 @@ export default function Home() {
   return (
     <>
       <AppHeader />
-      <main style={{ maxWidth: 960, margin: '0 auto', padding: '32px 20px 64px' }}>
+      <main className="pf-main">
         {!report && !loading && (
           <>
-            <Title level={2} style={{ marginBottom: 4 }}>
-              Is your drawing ready to quote?
-            </Title>
-            <Paragraph type="secondary" style={{ fontSize: 16, marginTop: 0 }}>
+            <h1 className="pf-h1">Is your drawing ready to quote?</h1>
+            <p className="pf-sub">
               Drop a 2D engineering drawing — and optionally its STEP model. Get an instant
               quote-readiness score, a checklist of exactly what&apos;s missing, a drawing↔model
-              consistency check, and conservative DFM risk flags — in seconds, before you talk to a
+              consistency check, and conservative DFM risk flags. In seconds, before you talk to a
               supplier.
-            </Paragraph>
-            <Card style={{ marginTop: 16 }}>
+            </p>
+            <div className="pf-drop">
               <Dragger
                 multiple
                 showUploadList={false}
@@ -90,45 +87,46 @@ export default function Home() {
                   return false;
                 }}
               >
-                <p className="ant-upload-drag-icon">
+                <div className="pf-drop-ic">
                   <InboxOutlined />
-                </p>
-                <p className="ant-upload-text">Click or drag your drawing here</p>
-                <p className="ant-upload-hint">
-                  PDF / PNG drawing — drop the STEP model too for a drawing↔CAD cross-check · nothing
-                  is stored
-                </p>
+                </div>
+                <div className="pf-drop-title">Click or drag your drawing here</div>
+                <div className="pf-drop-hint">
+                  PDF / PNG · add the STEP model for a drawing↔CAD cross-check · nothing is stored
+                </div>
               </Dragger>
-            </Card>
+            </div>
             {error && (
-              <Alert
-                style={{ marginTop: 16 }}
-                type="error"
-                showIcon
-                title="Couldn't analyze that file"
-                description={error}
-              />
+              <div className="pf-banner bad" style={{ marginTop: 16 }}>
+                <span className="pf-banner-ic">!</span>
+                <div>
+                  <div className="pf-banner-title">Couldn&apos;t analyze that file</div>
+                  <div className="pf-banner-detail">{error}</div>
+                </div>
+              </div>
             )}
           </>
         )}
 
         {loading && (
-          <Flex vertical align="center" justify="center" gap={16} style={{ padding: '80px 0' }}>
-            <Spin size="large" />
-            <Text type="secondary">
-              Reading {fileName} — extracting specs, checking readiness…
-            </Text>
-          </Flex>
+          <div className="pf-loading">
+            <div className="pf-spinner" />
+            <ul className="pf-steps">
+              <li>Reading drawing</li>
+              <li>Extracting requirements</li>
+              <li>Checking readiness</li>
+              <li>Cross-checking model</li>
+            </ul>
+            {fileName && <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>{fileName}</div>}
+          </div>
         )}
 
         {report && !loading && (
           <>
-            <Flex justify="space-between" align="center" style={{ marginBottom: 16 }}>
-              <Title level={3} style={{ margin: 0 }}>
-                Pre-Flight report
-              </Title>
+            <div className="pf-report-head">
+              <h2 className="pf-report-title">Pre-Flight report</h2>
               <Button onClick={reset}>Analyze another</Button>
-            </Flex>
+            </div>
             <ReadinessReportView report={report} fileName={fileName} />
           </>
         )}

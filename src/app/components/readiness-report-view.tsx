@@ -1,34 +1,21 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { Card, Progress, Tag, Alert, Typography, Flex, Space } from 'antd';
+import { Progress } from 'antd';
 import { CheckCircleFilled, WarningFilled, CloseCircleFilled } from '@ant-design/icons';
 import type { ExtractedSpec } from '@/core/domain/entities/extracted-spec';
-import type {
-  CheckStatus,
-  ReadinessGrade,
-  ReadinessReport,
-  RiskSeverity,
-} from '@/core/domain/entities/readiness';
+import type { CheckStatus, ReadinessGrade, ReadinessReport } from '@/core/domain/entities/readiness';
 
-const { Title, Text, Paragraph } = Typography;
-
-const STATUS_META: Record<CheckStatus, { icon: ReactNode }> = {
-  pass: { icon: <CheckCircleFilled style={{ color: '#01b39e' }} /> },
-  warn: { icon: <WarningFilled style={{ color: '#faad14' }} /> },
-  fail: { icon: <CloseCircleFilled style={{ color: '#ff4d4f' }} /> },
+const STATUS_ICON: Record<CheckStatus, ReactNode> = {
+  pass: <CheckCircleFilled />,
+  warn: <WarningFilled />,
+  fail: <CloseCircleFilled />,
 };
 
-const SEVERITY_TYPE: Record<RiskSeverity, 'info' | 'warning' | 'error'> = {
-  low: 'info',
-  medium: 'warning',
-  high: 'error',
-};
-
-const GRADE_META: Record<ReadinessGrade, { text: string; color: 'success' | 'warning' | 'error' }> = {
-  ready: { text: 'Supplier-ready', color: 'success' },
-  needs_work: { text: 'Needs work', color: 'warning' },
-  not_ready: { text: 'Not ready', color: 'error' },
+const GRADE_LABEL: Record<ReadinessGrade, string> = {
+  ready: 'Supplier-ready',
+  needs_work: 'Needs work',
+  not_ready: 'Not ready',
 };
 
 export function ReadinessReportView({
@@ -38,128 +25,160 @@ export function ReadinessReportView({
   report: ReadinessReport;
   fileName: string | null;
 }) {
-  const grade = GRADE_META[report.grade];
-  const scoreColor = report.score >= 80 ? '#01b39e' : report.score >= 50 ? '#faad14' : '#ff4d4f';
-  const spec = report.spec;
+  const ringColor =
+    report.score >= 80 ? '#01b39e' : report.score >= 50 ? '#e8950c' : '#e5484d';
 
   return (
-    <Flex vertical gap={16}>
-      <Card>
-        <Flex align="center" gap={28} wrap>
-          <Progress
-            type="circle"
-            percent={report.score}
-            size={120}
-            strokeColor={scoreColor}
-            format={(p) => <span style={{ fontSize: 26, fontWeight: 700 }}>{p}</span>}
-          />
-          <Flex vertical gap={6} style={{ flex: 1, minWidth: 240 }}>
-            <Space align="center">
-              <Title level={4} style={{ margin: 0 }}>
-                Quote-readiness
-              </Title>
-              <Tag color={grade.color}>{grade.text}</Tag>
-            </Space>
-            <Paragraph style={{ margin: 0, fontSize: 15 }}>{report.summary}</Paragraph>
-            {fileName && (
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                {fileName}
-              </Text>
-            )}
-          </Flex>
-        </Flex>
-      </Card>
-
-      <Card
-        title="Drawing ↔ Model consistency"
-        size="small"
-        extra={
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            checks the drawing against the STEP geometry
-          </Text>
-        }
-      >
-        {renderConsistency(report.consistency)}
-      </Card>
-
-      <Card title="Extracted requirements" size="small">
-        <Space size={[8, 8]} wrap>
-          <Tag color="#01b39e">{labelProcess(spec.process)}</Tag>
-          {spec.material && <Tag color="#01b39e">{spec.material}</Tag>}
-          {spec.quantity != null && <Tag color="#01b39e">Qty {spec.quantity}</Tag>}
-          {spec.units !== 'unspecified' && <Tag color="#01b39e">{spec.units}</Tag>}
-          {spec.tolerances.map((t, i) => (
-            <Tag key={`tol-${i}`} color="#01b39e">
-              {t.value}
-              {t.hasDatum ? '' : ' (no datum)'}
-            </Tag>
-          ))}
-          {spec.surfaceFinishes.map((s, i) => (
-            <Tag key={`fin-${i}`} color="#01b39e">
-              {s}
-            </Tag>
-          ))}
-          {spec.finishing && <Tag color="#01b39e">{spec.finishing}</Tag>}
-          {isSpecEmpty(spec) && <Text type="secondary">No structured requirements detected.</Text>}
-        </Space>
-      </Card>
-
-      <Card title="Readiness checklist" size="small">
-        <Flex vertical>
-          {report.checks.map((c, i) => (
-            <div
-              key={c.id}
-              style={{
-                padding: '12px 0',
-                borderBottom: i < report.checks.length - 1 ? '1px solid #f0f0f0' : 'none',
-              }}
-            >
-              <Flex gap={12} align="flex-start" style={{ width: '100%' }}>
-                <span style={{ fontSize: 18, lineHeight: '22px' }}>{STATUS_META[c.status].icon}</span>
-                <Flex vertical style={{ flex: 1 }}>
-                  <Text strong>{c.label}</Text>
-                  <Text type="secondary" style={{ fontSize: 13 }}>
-                    {c.detail}
-                  </Text>
-                </Flex>
-                <Tag>{c.weight} pts</Tag>
-              </Flex>
+    <div className="pf-stack">
+      {/* score */}
+      <section className="pf-card">
+        <div className="pf-hero">
+          <div className="pf-gauge">
+            <Progress
+              type="circle"
+              percent={report.score}
+              size={132}
+              strokeWidth={9}
+              railColor="#eef2f3"
+              strokeColor={ringColor}
+              format={() => (
+                <div>
+                  <div className="pf-gauge-num">{report.score}</div>
+                  <div className="pf-gauge-cap">/ 100</div>
+                </div>
+              )}
+            />
+          </div>
+          <div className="pf-hero-body">
+            <div className="pf-hero-row">
+              <span className="pf-hero-title">Quote-readiness</span>
+              <span className={`pf-grade ${report.grade}`}>{GRADE_LABEL[report.grade]}</span>
             </div>
-          ))}
-        </Flex>
-      </Card>
+            <p className="pf-summary">{report.summary}</p>
+            {fileName && <div className="pf-file">{fileName}</div>}
+          </div>
+        </div>
+      </section>
 
-      <Card
-        title="DFM risk flags"
-        size="small"
-        extra={
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            heuristic — confirm with supplier
-          </Text>
-        }
-      >
+      {/* consistency */}
+      <section className="pf-card">
+        <div className="pf-card-head">
+          <span className="pf-card-title">Drawing ↔ Model consistency</span>
+          <span className="pf-card-note">checks the drawing against the STEP geometry</span>
+        </div>
+        <Consistency consistency={report.consistency} />
+      </section>
+
+      {/* extracted requirements */}
+      <section className="pf-card">
+        <div className="pf-card-head">
+          <span className="pf-card-title">Extracted requirements</span>
+        </div>
+        <Chips spec={report.spec} />
+      </section>
+
+      {/* checklist */}
+      <section className="pf-card">
+        <div className="pf-card-head">
+          <span className="pf-card-title">Readiness checklist</span>
+        </div>
+        {report.checks.map((c) => (
+          <div className="pf-check" key={c.id}>
+            <span className={`pf-check-ic ${c.status}`}>{STATUS_ICON[c.status]}</span>
+            <div className="pf-check-body">
+              <div className="pf-check-label">{c.label}</div>
+              <div className="pf-check-detail">{c.detail}</div>
+            </div>
+            <span className="pf-pts">{c.weight} pts</span>
+          </div>
+        ))}
+      </section>
+
+      {/* DFM risks */}
+      <section className="pf-card">
+        <div className="pf-card-head">
+          <span className="pf-card-title">DFM risk flags</span>
+          <span className="pf-card-note">heuristic — confirm with supplier</span>
+        </div>
         {report.risks.length === 0 ? (
-          <Text type="secondary">No high-confidence manufacturability risks flagged.</Text>
+          <div className="pf-empty">No high-confidence manufacturability risks flagged.</div>
         ) : (
-          <Flex vertical gap={8}>
-            {report.risks.map((r, i) => (
-              <Alert
-                key={`risk-${i}`}
-                type={SEVERITY_TYPE[r.severity]}
-                showIcon
-                title={
-                  <Text strong>
-                    {r.title}
-                    <Tag style={{ marginInlineStart: 6 }}>{r.severity}</Tag>
-                  </Text>
-                }
-                description={r.rationale}
-              />
-            ))}
-          </Flex>
+          report.risks.map((r, i) => (
+            <div className={`pf-risk ${r.severity}`} key={`risk-${i}`}>
+              <div className="pf-risk-top">
+                <span className="pf-risk-title">{r.title}</span>
+                <span className={`pf-sev ${r.severity}`}>{r.severity}</span>
+              </div>
+              <div className="pf-risk-detail">{r.rationale}</div>
+            </div>
+          ))
         )}
-      </Card>
-    </Flex>
+      </section>
+    </div>
+  );
+}
+
+const CONSISTENCY_META: Record<
+  ReadinessReport['consistency']['status'],
+  { cls: string; icon: string; title: string }
+> = {
+  match: { cls: 'match', icon: '✓', title: 'Drawing matches the model' },
+  mismatch: { cls: 'bad', icon: '✕', title: 'Drawing and model disagree' },
+  units_suspect: { cls: 'bad', icon: '!', title: 'Possible inch / mm units mismatch' },
+  insufficient: { cls: 'warn', icon: '?', title: 'Not enough to compare' },
+  no_model: { cls: 'neutral', icon: '+', title: 'No CAD model uploaded' },
+};
+
+function Consistency({ consistency }: { consistency: ReadinessReport['consistency'] }) {
+  const m = CONSISTENCY_META[consistency.status];
+  return (
+    <>
+      <div className={`pf-banner ${m.cls}`}>
+        <span className="pf-banner-ic">{m.icon}</span>
+        <div>
+          <div className="pf-banner-title">{m.title}</div>
+          <div className="pf-banner-detail">{consistency.detail}</div>
+        </div>
+      </div>
+      {consistency.modelDimsMm && (
+        <div className="pf-dims">
+          <div className="pf-dim">
+            <div className="pf-dim-label">Drawing</div>
+            <div className="pf-dim-val">
+              {consistency.drawingDimsMm ? `${consistency.drawingDimsMm.join(' × ')} mm` : '—'}
+            </div>
+          </div>
+          <div className="pf-dim-sep">{consistency.status === 'match' ? '≈' : '≠'}</div>
+          <div className="pf-dim">
+            <div className="pf-dim-label">Model (STEP bbox)</div>
+            <div className="pf-dim-val">{`${consistency.modelDimsMm.join(' × ')} mm`}</div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function Chips({ spec }: { spec: ExtractedSpec }) {
+  const items: string[] = [labelProcess(spec.process)];
+  if (spec.material) items.push(spec.material);
+  if (spec.units !== 'unspecified') items.push(spec.units);
+  if (spec.overallDimensionsMm) items.push(`${spec.overallDimensionsMm.join(' × ')} mm`);
+  spec.tolerances.forEach((t) => items.push(t.hasDatum ? t.value : `${t.value} (no datum)`));
+  spec.surfaceFinishes.forEach((s) => items.push(s));
+  if (spec.finishing) items.push(spec.finishing);
+
+  if (items.length <= 1 && spec.process === 'unknown') {
+    return <div className="pf-empty">No structured requirements detected.</div>;
+  }
+  return (
+    <div className="pf-chips">
+      {items.map((t, i) => (
+        <span className="pf-chip" key={`${t}-${i}`}>
+          {t}
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -172,61 +191,4 @@ function labelProcess(p: ExtractedSpec['process']): string {
     unknown: 'Process: unknown',
   };
   return labels[p];
-}
-
-function renderConsistency(c: ReadinessReport['consistency']): ReactNode {
-  const dims = (
-    <Space size={[8, 8]} wrap style={{ marginTop: 8 }}>
-      {c.drawingDimsMm && <Tag>Drawing: {c.drawingDimsMm.join(' × ')} mm</Tag>}
-      {c.modelDimsMm && <Tag color="#01b39e">Model bbox: {c.modelDimsMm.join(' × ')} mm</Tag>}
-    </Space>
-  );
-  switch (c.status) {
-    case 'no_model':
-      return <Text type="secondary">{c.detail}</Text>;
-    case 'match':
-      return (
-        <>
-          <Alert type="success" showIcon title="Drawing matches the model" description={c.detail} />
-          {dims}
-        </>
-      );
-    case 'units_suspect':
-      return (
-        <>
-          <Alert
-            type="error"
-            showIcon
-            title="Possible inch/mm units mismatch"
-            description={c.detail}
-          />
-          {dims}
-        </>
-      );
-    case 'mismatch':
-      return (
-        <>
-          <Alert type="error" showIcon title="Drawing and model disagree" description={c.detail} />
-          {dims}
-        </>
-      );
-    case 'insufficient':
-      return (
-        <>
-          <Alert type="warning" showIcon title="Not enough to compare" description={c.detail} />
-          {dims}
-        </>
-      );
-  }
-}
-
-function isSpecEmpty(s: ExtractedSpec): boolean {
-  return (
-    s.process === 'unknown' &&
-    !s.material &&
-    s.quantity == null &&
-    s.tolerances.length === 0 &&
-    s.surfaceFinishes.length === 0 &&
-    !s.finishing
-  );
 }
