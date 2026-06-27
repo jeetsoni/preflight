@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Upload, Button, Typography, Card, Spin, Alert, Flex } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import type { ReadinessReport } from '@/core/domain/entities/readiness';
@@ -10,20 +10,44 @@ import { ReadinessReportView } from './components/readiness-report-view';
 const { Dragger } = Upload;
 const { Title, Paragraph, Text } = Typography;
 
+const DRAWING_RE = /\.(pdf|png|jpe?g|webp)$/i;
+const CAD_RE = /\.(step|stp)$/i;
+
 export default function Home() {
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState<ReadinessReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
 
-  async function analyze(file: File) {
+  // antd's Dragger fires beforeUpload once per file; batch them into one request.
+  const batch = useRef<File[]>([]);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function queue(file: File) {
+    batch.current.push(file);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
+      const files = batch.current;
+      batch.current = [];
+      void analyze(files);
+    }, 60);
+  }
+
+  async function analyze(files: File[]) {
+    const drawing = files.find((f) => DRAWING_RE.test(f.name));
+    const cad = files.find((f) => CAD_RE.test(f.name));
+    if (!drawing) {
+      setError('Please include a drawing (PDF, PNG or JPEG). You can drop a STEP model alongside it.');
+      return;
+    }
     setLoading(true);
     setError(null);
     setReport(null);
-    setFileName(file.name);
+    setFileName(cad ? `${drawing.name} + ${cad.name}` : drawing.name);
     try {
       const fd = new FormData();
-      fd.append('file', file);
+      fd.append('file', drawing);
+      if (cad) fd.append('cad', cad);
       const res = await fetch('/api/analyze', { method: 'POST', body: fd });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Analysis failed.');
@@ -51,25 +75,29 @@ export default function Home() {
               Is your drawing ready to quote?
             </Title>
             <Paragraph type="secondary" style={{ fontSize: 16, marginTop: 0 }}>
-              Drop a 2D engineering drawing. Get an instant quote-readiness score, a checklist of
-              exactly what&apos;s missing, and conservative DFM risk flags — in seconds, before you
-              talk to a supplier.
+              Drop a 2D engineering drawing — and optionally its STEP model. Get an instant
+              quote-readiness score, a checklist of exactly what&apos;s missing, a drawing↔model
+              consistency check, and conservative DFM risk flags — in seconds, before you talk to a
+              supplier.
             </Paragraph>
             <Card style={{ marginTop: 16 }}>
               <Dragger
-                multiple={false}
+                multiple
                 showUploadList={false}
-                accept=".pdf,.png,.jpg,.jpeg,.webp"
+                accept=".pdf,.png,.jpg,.jpeg,.webp,.step,.stp"
                 beforeUpload={(file) => {
-                  void analyze(file as unknown as File);
+                  queue(file as unknown as File);
                   return false;
                 }}
               >
                 <p className="ant-upload-drag-icon">
                   <InboxOutlined />
                 </p>
-                <p className="ant-upload-text">Click or drag an engineering drawing here</p>
-                <p className="ant-upload-hint">PDF, PNG or JPEG · single part · nothing is stored</p>
+                <p className="ant-upload-text">Click or drag your drawing here</p>
+                <p className="ant-upload-hint">
+                  PDF / PNG drawing — drop the STEP model too for a drawing↔CAD cross-check · nothing
+                  is stored
+                </p>
               </Dragger>
             </Card>
             {error && (

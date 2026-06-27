@@ -34,6 +34,18 @@ export interface RiskFlag {
 
 export type ReadinessGrade = 'ready' | 'needs_work' | 'not_ready';
 
+/** Result of cross-checking the drawing's stated size against the CAD model. */
+export type ConsistencyStatus = 'match' | 'mismatch' | 'units_suspect' | 'no_model' | 'insufficient';
+
+export interface ConsistencyResult {
+  readonly status: ConsistencyStatus;
+  readonly detail: string;
+  /** Drawing overall dims (mm, largest-first) used in the comparison. */
+  readonly drawingDimsMm: number[] | null;
+  /** Model bounding-box dims (mm, largest-first) from the CAD file. */
+  readonly modelDimsMm: number[] | null;
+}
+
 /** The full result returned to the caller. */
 export interface ReadinessReport {
   /** 0..100 quote-readiness score. */
@@ -41,6 +53,8 @@ export interface ReadinessReport {
   readonly grade: ReadinessGrade;
   readonly checks: readonly ReadinessCheck[];
   readonly risks: readonly RiskFlag[];
+  /** Drawing↔CAD bounding-box cross-check. */
+  readonly consistency: ConsistencyResult;
   readonly spec: ExtractedSpec;
   /** One-line, action-oriented takeaway. */
   readonly summary: string;

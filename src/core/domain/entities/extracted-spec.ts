@@ -39,6 +39,8 @@ export interface ExtractedSpec {
   readonly material: string | null;
   readonly quantity: number | null;
   readonly units: Units;
+  /** The part's overall bounding dimensions in mm as read off the drawing, largest-first; null if not determinable. */
+  readonly overallDimensionsMm: readonly number[] | null;
   readonly tolerances: readonly ToleranceCallout[];
   /** Surface roughness / finish callouts, e.g. ["Ra 0.8", "Ra 1.6"]. */
   readonly surfaceFinishes: readonly string[];

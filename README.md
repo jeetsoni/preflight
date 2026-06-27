@@ -1,10 +1,12 @@
 # Pre-Flight
 
-**Instant quote-readiness for engineering drawings.** Drop a 2D drawing (PDF/PNG) and get, in seconds — before you ever talk to a supplier:
+**Instant pre-quote intelligence for engineering drawings.** Drop a 2D drawing (PDF/PNG) — and optionally its STEP model — and get, in seconds, the judgement a managed sourcing flow makes you wait on a human for:
 
-1. **A quote-readiness score (0–100)** with a checklist of exactly what's missing or ambiguous.
-2. **The extracted requirements** (process, material, tolerances, finish, title block).
+1. **A quote-readiness score (0–100)** — a checklist of exactly what's missing or ambiguous that would slow a supplier quote.
+2. **A drawing ↔ CAD consistency check** — parses the STEP bounding box and cross-checks it against the drawing's stated overall size, catching wrong-revision models and inch/mm mix-ups. *The check extraction-only tools skip.*
 3. **Conservative DFM risk flags** — clearly labelled heuristic, to confirm with a supplier.
+
+It reads the specs too (process, material, tolerances, finish), but extraction isn't the differentiator — the judgement layer on top of it is.
 
 ## Why this exists
 
@@ -23,14 +25,15 @@ Dependencies point inward only. The core knows nothing about Next.js, React, or 
    |_ src/composition/container.ts
  infrastructure (adapters)                  <- implements the ports
    |_ src/infrastructure/ai      (Vercel AI SDK: extractor, risk analyzer, provider registry)
+   |_ src/infrastructure/cad     (dependency-free STEP bounding-box reader)
    |_ src/infrastructure/ingest  (upload normalization)
  core/application (use case + ports)        <- orchestration, depends on interfaces
-   |_ AnalyzeDrawing, SpecExtractorPort, RiskAnalyzerPort, DrawingIngestPort
- core/domain (entities + policy)            <- pure business rules, zero dependencies
-   |_ ExtractedSpec, ReadinessReport, ReadinessPolicy
+   |_ AnalyzeDrawing, SpecExtractorPort, RiskAnalyzerPort, CadGeometryPort, DrawingIngestPort
+ core/domain (entities + policies)          <- pure business rules, zero dependencies
+   |_ ExtractedSpec, ReadinessReport, ReadinessPolicy, ConsistencyPolicy
 ```
 
-Pipeline: `ingest -> extract specs (LLM) -> assess DFM risk (LLM) -> score readiness (pure domain)`.
+Pipeline: `ingest -> (extract specs (LLM) ‖ read STEP bbox) -> assess DFM risk (LLM) -> cross-check drawing vs model -> score readiness`.
 
 ### Swappable LLM, by design
 

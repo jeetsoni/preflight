@@ -15,6 +15,10 @@ export const ExtractedSpecSchema = z.object({
   material: z.string().nullable().describe('Material spec exactly as written, or null if absent.'),
   quantity: z.number().int().positive().nullable().describe('Order quantity if stated, else null.'),
   units: z.enum(['mm', 'inch', 'unspecified']),
+  overallDimensionsMm: z
+    .array(z.number())
+    .nullable()
+    .describe("Part's overall bounding dimensions in mm (largest-first), or null if not determinable."),
   tolerances: z
     .array(
       z.object({
@@ -58,6 +62,7 @@ export function toExtractedSpec(dto: ExtractedSpecDTO): ExtractedSpec {
     material: dto.material,
     quantity: dto.quantity,
     units: dto.units,
+    overallDimensionsMm: dto.overallDimensionsMm,
     tolerances: dto.tolerances,
     surfaceFinishes: dto.surfaceFinishes,
     finishing: dto.finishing,

@@ -1,6 +1,7 @@
 import type { ExtractedSpec, ManufacturingProcess } from '../entities/extracted-spec';
 import type {
   CheckStatus,
+  ConsistencyResult,
   ReadinessCheck,
   ReadinessGrade,
   ReadinessReport,
@@ -16,12 +17,24 @@ import type {
  * No framework, no I/O, no LLM. 100% unit-testable.
  */
 export class ReadinessPolicy {
-  evaluate(spec: ExtractedSpec, risks: readonly RiskFlag[]): ReadinessReport {
+  evaluate(
+    spec: ExtractedSpec,
+    risks: readonly RiskFlag[],
+    consistency: ConsistencyResult,
+  ): ReadinessReport {
     const checks = this.buildChecks(spec);
     const score = this.scoreOf(checks);
     const grade: ReadinessGrade =
       score >= 80 ? 'ready' : score >= 50 ? 'needs_work' : 'not_ready';
-    return { score, grade, checks, risks, spec, summary: this.summarize(grade, checks) };
+    return {
+      score,
+      grade,
+      checks,
+      risks,
+      consistency,
+      spec,
+      summary: this.summarize(grade, checks),
+    };
   }
 
   private buildChecks(spec: ExtractedSpec): ReadinessCheck[] {
@@ -56,13 +69,6 @@ export class ReadinessPolicy {
           ? 'Tolerances are anchored to datums.'
           : `${missing} tolerance(s) lack a datum reference — ambiguous for inspection.`]));
     }
-
-    checks.push(
-      this.check('quantity', 'Quantity specified', 10,
-        spec.quantity !== null
-          ? ['pass', `Quantity: ${spec.quantity}.`]
-          : ['fail', 'No quantity — price and even the chosen process depend on volume.']),
-    );
 
     checks.push(
       this.check('units', 'Units are explicit', 10,

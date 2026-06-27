@@ -16,10 +16,18 @@ export async function POST(request: NextRequest) {
     }
 
     const bytes = new Uint8Array(await file.arrayBuffer());
+
+    const cadFile = form.get('cad');
+    const cad =
+      cadFile instanceof File
+        ? { bytes: new Uint8Array(await cadFile.arrayBuffer()), fileName: cadFile.name }
+        : undefined;
+
     const report = await makeAnalyzeDrawing().execute({
       bytes,
       mediaType: file.type,
       fileName: file.name,
+      cad,
     });
 
     return Response.json(report);

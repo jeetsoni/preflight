@@ -16,7 +16,10 @@ Extract ONLY what is actually present on the drawing. This is critical:
 - For each tolerance, set hasDatum=true only if a datum/reference frame (e.g. a
   datum letter or GD&T frame) is actually present for it.
 - Put any genuinely conflicting or unclear callouts in "ambiguities". If there are
-  none, return an empty array. Do not pad it.`;
+  none, return an empty array. Do not pad it.
+- For overallDimensionsMm, give the part's overall bounding size in mm (its largest
+  outer dimensions, e.g. length, width, height/thickness) when the drawing shows
+  enough to determine it; convert from inches if needed; otherwise null.`;
 
 /**
  * SpecExtractorPort implemented with the Vercel AI SDK's structured-output API.

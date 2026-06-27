@@ -70,6 +70,18 @@ export function ReadinessReportView({
         </Flex>
       </Card>
 
+      <Card
+        title="Drawing ↔ Model consistency"
+        size="small"
+        extra={
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            checks the drawing against the STEP geometry
+          </Text>
+        }
+      >
+        {renderConsistency(report.consistency)}
+      </Card>
+
       <Card title="Extracted requirements" size="small">
         <Space size={[8, 8]} wrap>
           <Tag color="#01b39e">{labelProcess(spec.process)}</Tag>
@@ -160,6 +172,52 @@ function labelProcess(p: ExtractedSpec['process']): string {
     unknown: 'Process: unknown',
   };
   return labels[p];
+}
+
+function renderConsistency(c: ReadinessReport['consistency']): ReactNode {
+  const dims = (
+    <Space size={[8, 8]} wrap style={{ marginTop: 8 }}>
+      {c.drawingDimsMm && <Tag>Drawing: {c.drawingDimsMm.join(' × ')} mm</Tag>}
+      {c.modelDimsMm && <Tag color="#01b39e">Model bbox: {c.modelDimsMm.join(' × ')} mm</Tag>}
+    </Space>
+  );
+  switch (c.status) {
+    case 'no_model':
+      return <Text type="secondary">{c.detail}</Text>;
+    case 'match':
+      return (
+        <>
+          <Alert type="success" showIcon title="Drawing matches the model" description={c.detail} />
+          {dims}
+        </>
+      );
+    case 'units_suspect':
+      return (
+        <>
+          <Alert
+            type="error"
+            showIcon
+            title="Possible inch/mm units mismatch"
+            description={c.detail}
+          />
+          {dims}
+        </>
+      );
+    case 'mismatch':
+      return (
+        <>
+          <Alert type="error" showIcon title="Drawing and model disagree" description={c.detail} />
+          {dims}
+        </>
+      );
+    case 'insufficient':
+      return (
+        <>
+          <Alert type="warning" showIcon title="Not enough to compare" description={c.detail} />
+          {dims}
+        </>
+      );
+  }
 }
 
 function isSpecEmpty(s: ExtractedSpec): boolean {
