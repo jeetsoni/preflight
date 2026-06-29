@@ -64,6 +64,21 @@ export default function Home() {
     setFileName(null);
   }
 
+  async function trySample() {
+    try {
+      const [drawing, model] = await Promise.all([
+        fetch('/samples/sample-drawing.pdf').then((r) => r.blob()),
+        fetch('/samples/sample-model.step').then((r) => r.blob()),
+      ]);
+      void analyze([
+        new File([drawing], 'sample-drawing.pdf', { type: 'application/pdf' }),
+        new File([model], 'sample-model.step', { type: 'model/step' }),
+      ]);
+    } catch {
+      setError('Could not load the sample — try uploading a file instead.');
+    }
+  }
+
   return (
     <>
       <AppHeader />
@@ -95,6 +110,11 @@ export default function Home() {
                   PDF / PNG · add the STEP model for a drawing↔CAD cross-check · nothing is stored
                 </div>
               </Dragger>
+            </div>
+            <div style={{ textAlign: 'center', marginTop: 14 }}>
+              <Button type="link" onClick={() => void trySample()} style={{ fontWeight: 500 }}>
+                No drawing handy? Try a sample part →
+              </Button>
             </div>
             {error && (
               <div className="pf-banner bad" style={{ marginTop: 16 }}>
