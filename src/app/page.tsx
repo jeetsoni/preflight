@@ -73,12 +73,12 @@ export default function Home() {
   async function trySample() {
     try {
       const [drawing, model] = await Promise.all([
-        fetch('/samples/sample-drawing.pdf').then((r) => r.blob()),
-        fetch('/samples/sample-model.step').then((r) => r.blob()),
+        fetch('/samples/Sample_Part.pdf').then((r) => r.blob()),
+        fetch('/samples/Sample_Part.step').then((r) => r.blob()),
       ]);
       void analyze([
-        new File([drawing], 'sample-drawing.pdf', { type: 'application/pdf' }),
-        new File([model], 'sample-model.step', { type: 'model/step' }),
+        new File([drawing], 'Sample_Part.pdf', { type: 'application/pdf' }),
+        new File([model], 'Sample_Part.step', { type: 'model/step' }),
       ]);
     } catch {
       setError('Could not load the sample — try uploading a file instead.');
