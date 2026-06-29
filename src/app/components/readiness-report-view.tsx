@@ -5,6 +5,8 @@ import { Progress } from 'antd';
 import { CheckCircleFilled, WarningFilled, CloseCircleFilled } from '@ant-design/icons';
 import type { ExtractedSpec } from '@/core/domain/entities/extracted-spec';
 import type { CheckStatus, ReadinessGrade, ReadinessReport } from '@/core/domain/entities/readiness';
+import DrawingPreview from './drawing-preview';
+import ModelViewer from './model-viewer';
 
 const STATUS_ICON: Record<CheckStatus, ReactNode> = {
   pass: <CheckCircleFilled />,
@@ -21,15 +23,36 @@ const GRADE_LABEL: Record<ReadinessGrade, string> = {
 export function ReadinessReportView({
   report,
   fileName,
+  drawingFile,
+  cadFile,
 }: {
   report: ReadinessReport;
   fileName: string | null;
+  drawingFile?: File | null;
+  cadFile?: File | null;
 }) {
   const ringColor =
     report.score >= 80 ? '#01b39e' : report.score >= 50 ? '#e8950c' : '#e5484d';
 
   return (
     <div className="pf-stack">
+      {(drawingFile || cadFile) && (
+        <section className="pf-preview-row">
+          {drawingFile && (
+            <div className="pf-preview-card">
+              <div className="pf-preview-head">Drawing</div>
+              <DrawingPreview file={drawingFile} />
+            </div>
+          )}
+          {cadFile && (
+            <div className="pf-preview-card">
+              <div className="pf-preview-head">3D model</div>
+              <ModelViewer file={cadFile} />
+            </div>
+          )}
+        </section>
+      )}
+
       {/* score */}
       <section className="pf-card">
         <div className="pf-hero">

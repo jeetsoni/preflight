@@ -17,6 +17,8 @@ export default function Home() {
   const [report, setReport] = useState<ReadinessReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [drawingFile, setDrawingFile] = useState<File | null>(null);
+  const [cadFile, setCadFile] = useState<File | null>(null);
 
   // antd's Dragger fires beforeUpload once per file; batch them into one request.
   const batch = useRef<File[]>([]);
@@ -43,6 +45,8 @@ export default function Home() {
     setError(null);
     setReport(null);
     setFileName(cad ? `${drawing.name}  +  ${cad.name}` : drawing.name);
+    setDrawingFile(drawing);
+    setCadFile(cad ?? null);
     try {
       const fd = new FormData();
       fd.append('file', drawing);
@@ -62,6 +66,8 @@ export default function Home() {
     setReport(null);
     setError(null);
     setFileName(null);
+    setDrawingFile(null);
+    setCadFile(null);
   }
 
   async function trySample() {
@@ -147,7 +153,12 @@ export default function Home() {
               <h2 className="pf-report-title">Pre-Flight report</h2>
               <Button onClick={reset}>Analyze another</Button>
             </div>
-            <ReadinessReportView report={report} fileName={fileName} />
+            <ReadinessReportView
+              report={report}
+              fileName={fileName}
+              drawingFile={drawingFile}
+              cadFile={cadFile}
+            />
           </>
         )}
       </main>
